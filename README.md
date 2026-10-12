@@ -11,16 +11,17 @@ corpus and arrives only after the GitHub sign-in proves the person belongs to th
 curl -fsSL https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/mac.sh | bash
 ```
 
-**On Windows** — copy the line below (the copy button at its right edge), then press the
-**Windows key and R** together: a small Run box opens. Press **Ctrl+V**, then **Enter**.
-Click **Yes** when Windows asks to allow changes.
+**On Windows** — copy the line below (the copy button at its right edge). Then click **Start**,
+type **PowerShell**, click **Windows PowerShell** (the one without "x86"; the installer moves itself
+if the x86 one is used); when the blue window opens, press **Ctrl+V** (no need to click in it), then **Enter**. Click **Yes**
+when Windows asks to allow changes.
 
 ```
-powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1 | iex"
+irm https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1 | iex
 ```
 
-(Or, in Windows PowerShell — the one without "x86":
-`irm https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1 | iex`)
+Do not use the Windows key + R "Run" box: Windows Defender blocks a download command pasted there
+("Windows cannot access the specified device, path, or file"), as it should — scams ask for it.
 
 **Guided set-up (the way employees are sent):** after accepting the Claude invitation on the
 computer, the person opens the Claude app on their phone (iPhone or Android; or claude.ai in
@@ -43,4 +44,5 @@ Version: see `VERSION`.
 | Version | Date | Change |
 |---|---|---|
 | 1.0.0 | 2026-10-12 | First version: Mac and Windows bootstraps for the member kit 1.0.0. |
+| 1.0.2 | 2026-10-12 | The Windows line goes into Windows PowerShell opened from the Start menu, in its own box with a copy button; the Run box is dropped because Windows Defender blocks a download command pasted there (second test, cetest on xps17). `GUIDE.md` 1.0.2 to match. |
 | 1.0.1 | 2026-10-12 | From the first Windows test (cetest on xps17): every step names what it does and its normal time; a line every 15 seconds while anything slow runs (time so far, normal time, latest output); a setup log copied into the work repository; Windows relaunches itself in 64-bit PowerShell when started in the x86 one; Windows switches off the console's Select mode for its own window, because a click inside it froze the first test until Esc was pressed; a second run updates the corpus copy (Windows); the GitHub-invitation step names the invitation email and its buttons instead of a page that cannot show an email invitation; the Claude in Chrome page opens in Chrome, not the default browser. Then: the Windows line goes in the Run box; the GitHub sign-in asks no questions and puts its code on the clipboard; the window says what frozen looks like and what to do; a stuck step is stopped and tried once more. Then, from the same test: no false "Failed opening a web browser"; the Claude Code sign-in check fixed; the paste-code step explained; enter-mashing and double runs handled; `GUIDE.md`, the guide for the employee's own Claude, added. |

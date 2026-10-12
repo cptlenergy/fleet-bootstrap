@@ -50,16 +50,17 @@ Then tell them how to show you the screen (rule 4) in one or two lines, and go t
    ```
    github.com/cptlenergy/fleet-bootstrap
    ```
-   The page shows a section **On Windows** with a grey box holding a long line that starts with `powershell`. They click the **copy icon** (two overlapping squares) at the right edge of that grey box. Nothing visible happens; that is normal. (If you are on the computer yourself, in claude.ai, you may instead give them the line in a code block: `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1 | iex"`.)
-2. Tell them: press the **Windows key and R** together. A small box called **Run** opens at the bottom left. Press **Ctrl + V**, then **Enter**.
-3. A blue window opens and says, in yellow, that Windows will ask for permission and that the set-up continues in a new window. Windows then shows **"Do you want to allow this app to make changes to your device?"** (Windows PowerShell). They click **Yes**.
+   The page shows a section **On Windows** with a grey box holding a line that starts with `irm`. They click the **copy icon** (two overlapping squares) at the right edge of that grey box. Nothing visible happens; that is normal. (If you are on the computer yourself, in claude.ai, you may give them the line instead: `irm https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1 | iex`.)
+2. **Open Windows PowerShell from the Start menu.** Click the **Start** button (the Windows logo, bottom left or bottom centre of the screen), type **PowerShell**, and in the list click **Windows PowerShell** — the one **without "x86"**, and not "ISE". (If they open the x86 one by mistake it still works: the set-up moves itself.) A blue window with a blinking cursor opens. Without clicking inside it (a click can put it in a paused "Select" state; if its title starts with "Select", press **Esc**), they press **Ctrl + V** (the line appears), then **Enter**.
+   - **Never the Windows key + R "Run" box:** Windows Defender blocks a download command pasted there ("Windows cannot access the specified device, path, or file"), because scams ask people to do exactly that. If they already tried it and saw that message: nothing is harmed; use the Start menu.
+3. The blue window says, in yellow, that Windows will ask for permission and that the set-up continues in a new window. Windows then shows **"Do you want to allow this app to make changes to your device?"** (Windows PowerShell). They click **Yes**.
    - If instead Windows asks for an administrator's **password**, their account is not an administrator on this computer: stop and tell them to contact M.
    - The first window closes by itself after 10 seconds.
 4. The set-up window opens: title **CAPITAL ENERGY SET-UP - watch this window, do not click inside it**, a green banner at the top. This is the only window to watch. Total time about 20 to 40 minutes.
 5. **What working looks like:** headings `==== 1 of 8`, `2 of 8` ... `8 of 8`, `OK` lines, and while anything slow runs a line every 15 seconds: `still working: installing Google Chrome - 1:45 so far (normal: up to 5 min)`. Tell them this so they can trust the quiet parts.
 6. **What stuck looks like, and what to do** (tell them before they need it):
    - The title begins with **Select** → a click inside the window paused it. Press **Esc**. (The current set-up prevents this; older versions did not.)
-   - No new line for 2 minutes and the window is not asking anything → press **Esc** once; still nothing after another minute → close the window with the X and run the line again (step 1). It is safe and carries on where it stopped.
+   - No new line for 2 minutes and the window is not asking anything → press **Esc** once; still nothing after another minute → close the window with the X and run the line again (steps 1 and 2). It is safe and carries on where it stopped.
    - **"The Capital Energy set-up is already running in another window"** → they started it twice. Find the window titled CAPITAL ENERGY SET-UP (the blue icon with `>_` in the taskbar at the bottom of the screen).
    - Pressing Enter many times does no harm: the set-up throws away keys typed while it is busy.
 7. The steps, in order, and what each needs from them:
@@ -80,7 +81,7 @@ Then tell them how to show you the screen (rule 4) in one or two lines, and go t
    - "winget ... is missing" → the Microsoft Store's **App Installer** needs installing or updating (open Microsoft Store, search App Installer, Update or Get), then run the line again.
    - "not in the cptlenergy organization" → section A, then run the line again.
    - "Ubuntu is installed but does not start yet" → open **Ubuntu** from the Start menu once, follow what it asks (a user name and password for Linux; any will do, they will not need them), close it, run the line again.
-   - "... was stuck twice" → run the line again; if it sticks again, contact M.
+   - "... was stuck twice" → run the line again (Start menu, Windows PowerShell, paste, Enter); if it sticks again, contact M.
    - **"bash: line 1: logged: command not found"** (older versions only): harmless, ignore it.
    - Anything else → screenshot to M, stop.
 
@@ -122,4 +123,5 @@ Tell them they are done with you, and that their AI in the Code tab is the one t
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.2 | 2026-10-12 | The Windows line is pasted into Windows PowerShell opened from the Start menu, never the Run box: Windows Defender blocked the Run-box paste in the second test ("Windows cannot access the specified device, path, or file"), as it blocks the same pattern used by scams (M, 16:08: "just give the instructions to find it in the menu"). |
 | 1.0.1 | 2026-10-12 | First version, written from the first Windows test (cetest on xps17) by the (AV) M session on xps17. Phone-first (M, 15:19: guide from the phone, photos of the screen, voice; screenshot keys only when no phone); the set-up line is copied on the computer from the public page's copy button. |
