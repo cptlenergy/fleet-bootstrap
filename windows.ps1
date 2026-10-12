@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.2'
+$BV = '1.0.3'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -320,10 +320,18 @@ echo "$out" | grep -q '@' && exit 0
 exit 1
 EOS
 chmod +x ~/.ce_clip/bin/*
+cat > ~/.ce_clip/env <<'EOS'
+export BROWSER="$HOME/.ce_clip/bin/ce-open"
+export PATH="$HOME/.ce_clip/bin:$PATH"
+EOS
 echo HELPERS_OK
 '@.Replace("`r`n", "`n"))
     [void](Wsl-Ce ("bash '" + (To-Wsl $helpers) + "'"))
-    $browser = 'export BROWSER=~/.ce_clip/bin/ce-open PATH=~/.ce_clip/bin:$PATH'
+    # The command line reaching Ubuntu passes through a shell that expands $ before bash -lc
+    # sees it (the second test: $PATH expanded to Windows folders with "(x86)" in them and the
+    # Claude Code sign-in stopped on a syntax error). So no $ in these command lines: the
+    # settings live in a small file that is read inside Ubuntu.
+    $browser = '. ~/.ce_clip/env'
     if ((Wsl-Ce 'gh auth status >/dev/null 2>&1') -ne 0) {
         # No questions from the GitHub tool (its "Authenticate Git with your GitHub credentials?"
         # confused the first test); the one-time code goes onto the Windows clipboard through a
@@ -340,7 +348,7 @@ echo HELPERS_OK
         Start-Sleep -Seconds 3
         Flush-Keys
         Start-Process 'https://github.com/login/device'
-        if ((Wsl-Ce "$browser WAYLAND_DISPLAY= DISPLAY=:0 GH_PROMPT_DISABLED=1; gh auth login --hostname github.com --git-protocol https --web --clipboard --scopes read:org,user:email") -ne 0) {
+        if ((Wsl-Ce "$browser; export WAYLAND_DISPLAY= DISPLAY=:0 GH_PROMPT_DISABLED=1; gh auth login --hostname github.com --git-protocol https --web --clipboard --scopes read:org,user:email") -ne 0) {
             Stop-Here 'the GitHub sign-in did not finish.' }
         Come-Back 'The GitHub sign-in'
     }
