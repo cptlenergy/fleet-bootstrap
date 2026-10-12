@@ -12,7 +12,7 @@
 # installs, its log folder, and your Claude Code settings.
 set -u
 ORG="cptlenergy"; CORPUS="Capital_Energy"; CE_HOME="$HOME/CapitalEnergy"
-BV="1.0.3"
+BV="1.0.4"
 LOGDIR="$HOME/Library/Logs/CapitalEnergy"; mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d_%H%M%S)_setup.txt"
 say() { echo "$*"; echo "$*" >> "$LOG"; }

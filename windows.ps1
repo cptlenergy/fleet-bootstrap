@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.3'
+$BV = '1.0.4'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -309,7 +309,35 @@ echo PREP_OK
     [IO.File]::WriteAllText($helpers, @'
 set -e
 mkdir -p ~/.ce_clip/bin
-printf '#!/bin/sh\n/mnt/c/Windows/explorer.exe "$1" >/dev/null 2>&1\nexit 0\n' > ~/.ce_clip/bin/ce-open
+cat > ~/.ce_clip/bin/ce-open <<'EOS'
+#!/bin/sh
+# Opens a web page in Windows' browser as the signed-in person: explorer.exe hands the page
+# to Windows, so the browser never runs as administrator. A long link given to explorer.exe
+# directly opened the Documents folder instead (third test, the Claude Code sign-in link),
+# so a long link goes through a small Internet-shortcut file, which explorer.exe opens in
+# the browser. Links other than GitHub's code page also go onto the Windows clipboard, so
+# they can be pasted into the browser if no tab opens. Always reports success: explorer.exe
+# reports failure even when the page opened (first test).
+url="$1"
+case "$url" in
+  *github.com/login/device*) ;;
+  *) printf '%s' "$url" | /mnt/c/Windows/System32/clip.exe >/dev/null 2>&1 ;;
+esac
+if [ "${#url}" -le 200 ]; then
+  /mnt/c/Windows/explorer.exe "$url" >/dev/null 2>&1
+  exit 0
+fi
+win="$(cd /mnt/c && /mnt/c/Windows/System32/cmd.exe /d /c 'echo %LOCALAPPDATA%' 2>/dev/null | tr -d '\r')"
+dir=''
+[ -n "$win" ] && dir="$(wslpath -u "$win" 2>/dev/null)/CapitalEnergy"
+if [ -n "$dir" ] && mkdir -p "$dir" 2>/dev/null &&
+   printf '[InternetShortcut]\r\nURL=%s\r\n' "$url" > "$dir/sign-in-link.url"; then
+  /mnt/c/Windows/explorer.exe "$(wslpath -w "$dir/sign-in-link.url")" >/dev/null 2>&1
+else
+  /mnt/c/Windows/explorer.exe "$url" >/dev/null 2>&1
+fi
+exit 0
+EOS
 printf '#!/bin/sh\ncase "$*" in *-o*|*--output*) exit 1;; esac\nexec /mnt/c/Windows/System32/clip.exe\n' > ~/.ce_clip/bin/ce-clip
 for n in xclip xsel wl-copy; do cp ~/.ce_clip/bin/ce-clip ~/.ce_clip/bin/$n; done
 cat > ~/.ce_clip/bin/ce-claude-signed-in <<'EOS'
@@ -378,6 +406,8 @@ echo HELPERS_OK
     if ($a -ne 0) {
         Say '  Claude Code sign-in (the AI that works in the background on this computer):'
         Say '    1. A browser tab opens. Sign in with your Capital Energy email, click Authorize.'
+        Say '       If no browser tab opens within 15 seconds: the link is already copied. Open your'
+        Say '       browser, click in the address bar at the top, press Ctrl+V, then Enter.'
         Say '    2. The page then shows a long code with a Copy button. Click Copy.'
         Say '    3. Come back to this window (the blue icon with >_ in the taskbar), press Ctrl+V'
         Say '       where it says "Paste code here", then Enter.'
