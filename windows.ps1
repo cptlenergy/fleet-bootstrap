@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.8'
+$BV = '1.0.9'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'

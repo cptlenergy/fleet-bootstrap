@@ -8,15 +8,22 @@
 # It says what it is doing at every step and prints a line at least every 15 seconds while
 # anything slow runs. Everything it shows is also written to a setup log
 # (~/Library/Logs/CapitalEnergy/), copied into the person's work repository at the end.
+# From 1.0.9 the record is full: what each sign-in program shows (recorded with the Mac's own
+# script tool), a description of the Mac at the start, every check's answer, and the last
+# lines of any slow step that failed - so a run that stops can be understood from the record
+# alone (M, 2026-10-13: "verbose logging so logs sent back reveal what happened").
+# Sign-in codes are hidden in the record and the home folder's path is written as ~.
 # It deletes nothing. It never touches files outside ~/CapitalEnergy, the tools it
 # installs, its log folder, and your Claude Code settings.
 set -u
 ORG="cptlenergy"; CORPUS="Capital_Energy"; CE_HOME="$HOME/CapitalEnergy"
-BV="1.0.8"
+BV="1.0.9"
 LOGDIR="$HOME/Library/Logs/CapitalEnergy"; mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d_%H%M%S)_setup.txt"
 say() { echo "$*"; echo "$*" >> "$LOG"; }
-step() { say ""; say "==== $*"; }
+# log: into the record only, not on the screen (details for M, noise for the person).
+log() { echo "$*" >> "$LOG"; }
+step() { say ""; say "==== $*"; log "     [$(date '+%H:%M:%S')]"; }
 ok() { say "  OK    $*"; }
 note() { say "  NOTE  $*"; }
 stop() { say ""; say "STOPPED: $*"; say "Nothing is broken. Fix the one thing above, then paste the same line again."; report_stop; say "The full record of this run is in $LOGDIR"; exit 1; }
@@ -31,13 +38,14 @@ report_stop() {
   if [ -d "$CE_HOME/work/.git" ] && [ -f "$kit/member_sync.sh" ]; then
     m="$(python3 "$kit/member_config.py" get machine 2>/dev/null)"
     if [ -n "$m" ]; then
-      mkdir -p "$CE_HOME/work/logs/setup/$m"; cp "$LOGDIR"/* "$CE_HOME/work/logs/setup/$m/" 2>/dev/null
-      if CE_MEMBER_HOME="$CE_HOME" bash "$kit/member_sync.sh" >/dev/null 2>&1; then
+      log "  (sending the record to the work repository at $(date '+%H:%M:%S'))"
+      mask_logs; mkdir -p "$CE_HOME/work/logs/setup/$m"; cp "$LOGDIR"/* "$CE_HOME/work/logs/setup/$m/" 2>/dev/null
+      if CE_MEMBER_HOME="$CE_HOME" bash "$kit/member_sync.sh" >> "$LOG" 2>&1; then
         say "  The record of this run has been sent to M automatically: just send M a photo of this window."; return
       fi
     fi
   fi
-  open "$LOGDIR" 2>/dev/null
+  mask_logs; open "$LOGDIR" 2>/dev/null
   say "  A Finder window has opened with the record of this run. Reply to M's set-up email,"
   say "  drag the files from that Finder window into the reply, and add a photo of this window."
 }
@@ -67,7 +75,75 @@ run_long() {
   wait "$pid"; local rc=$?
   local el=$((SECONDS - t0))
   say "    finished in $((el / 60)):$(printf %02d $((el % 60)))"
+  if [ "$rc" != 0 ]; then
+    log "    ($what failed with code $rc; the last lines of $(basename "$f"):)"
+    tail -n 30 "$f" 2>/dev/null | clean_text | sed 's/^/    | /' >> "$LOG"
+  fi
   return $rc
+}
+# clean_text: terminal colour codes and carriage returns out, so the record reads as plain text.
+clean_text() { perl -pe 's/\e\[[0-9;?]*[ -\/]*[@-~]//g; s/\e\][^\a\e]*(\a|\e\\)//g; s/\e[()][A-Za-z0-9]//g; s/\r(?!\n)/\n/g; s/\r//g; s/[^\t\n -~]//g' 2>/dev/null || cat; }
+# mask_logs: the home folder's path becomes ~ in every record of this set-up (the record goes to
+# GitHub; no account name in it), and sign-in records lose anything that looks like a code.
+mask_logs() {
+  local h="$HOME"
+  [ -n "$h" ] && [ "$h" != / ] && perl -pi -e 'BEGIN{$h=shift} s/\Q$h\E/~/g' "$h" "$LOGDIR"/*.txt "$LOGDIR"/*.log 2>/dev/null
+  perl -pi -e 's/[A-Za-z0-9_#.\-]{24,}/[long code hidden]/g' "$LOGDIR"/*sign_in*.log 2>/dev/null
+  return 0
+}
+# run_seen "what" command...: runs a program that talks with the person (a sign-in) in this
+# window, and records everything it shows into its own log file with the Mac's own script tool
+# (the same tool that records the browser terminal), then copies its last lines into the record.
+# Before 1.0.9 what a sign-in showed - including the first Mac test's crash - reached no record.
+# The program's input is this window's own terminal device (TTYDEV, set in main): /dev/tty made
+# Claude Code crash on the Mac in 1.0.7. Success is never judged from the code it returns.
+run_seen() {
+  local what="$1"; shift
+  local f="$LOGDIR/$(date +%Y%m%d_%H%M%S)_$(echo "$what" | tr -cs 'A-Za-z0-9' '_').log" rc
+  log "  (recording what $what shows into $(basename "$f"); input from $TTYDEV)"
+  if [ -x /usr/bin/script ]; then
+    /usr/bin/script -q -t 0 "$f" "$@" < "$TTYDEV"; rc=$?
+    # The recording tool itself failed (nothing recorded at all): run the program the 1.0.8 way,
+    # unrecorded, which worked on the Mac, rather than stop.
+    if [ "$rc" != 0 ] && [ ! -s "$f" ]; then
+      log "  (the script tool recorded nothing and returned $rc - running $what directly, unrecorded)"
+      "$@" < "$TTYDEV"; rc=$?
+    fi
+  else
+    log "  (no script tool on this Mac - $what is not recorded)"
+    "$@" < "$TTYDEV"; rc=$?
+  fi
+  mask_logs
+  log "  ($what finished with code $rc at $(date '+%H:%M:%S'); the last lines it showed:)"
+  tail -n 40 "$f" 2>/dev/null | clean_text | awk 'NF' | tail -n 25 | sed 's/^/    | /' >> "$LOG"
+  SEEN_LOG="$f"
+  return $rc
+}
+# crashed: did the recorded program show a crash? (the first Mac test showed "error: EINVAL ...
+# kqueue" and "Bun v1.4.3"; a crash is the set-up's fault, not the person's)
+crashed() { [ -f "${SEEN_LOG:-}" ] && clean_text < "$SEEN_LOG" | grep -qiE 'EINVAL|kqueue|panic|segmentation fault|uncaught|^Bun v|node:internal|Traceback'; }
+# describe_mac: the facts M needs to read a record from a Mac he has never seen; record only.
+describe_mac() {
+  log ""
+  log "---- this Mac, at the start of the run ($(date '+%Y-%m-%d %H:%M:%S %Z')) ----"
+  log "  set-up $BV; macOS $(sw_vers -productVersion 2>/dev/null) build $(sw_vers -buildVersion 2>/dev/null); $(uname -m); model $(sysctl -n hw.model 2>/dev/null); memory $(( $(sysctl -n hw.memsize 2>/dev/null || echo 0) / 1073741824 )) GB"
+  log "  account: $(id -Gn 2>/dev/null | tr ' ' '\n' | grep -qx admin && echo 'an Administrator' || echo 'NOT an Administrator'); shell $SHELL; window terminal $TTYDEV"
+  log "  free disk in the home folder: $(df -h "$HOME" 2>/dev/null | awk 'NR==2{print $4}')"
+  local b; b="$(command -v brew 2>/dev/null)"
+  for x in /opt/homebrew/bin/brew /usr/local/bin/brew; do [ -z "$b" ] && [ -x "$x" ] && b="$x"; done
+  if [ -n "$b" ]; then
+    log "  Homebrew: $b, owned by $([ "$(stat -f %u "$(dirname "$b")" 2>/dev/null)" = "$(id -u)" ] && echo 'this account' || echo 'another account')"
+  else log "  Homebrew: not installed"; fi
+  for t in git gh tmux ttyd claude python3; do
+    local v="--version"; [ "$t" = tmux ] && v="-V"
+    if command -v "$t" >/dev/null 2>&1; then log "  $t: $(command -v "$t" | sed "s#^$HOME#~#") - $("$t" $v 2>&1 | head -n 1)"
+    else log "  $t: not found"; fi
+  done
+  log "  PATH: $(echo "$PATH" | sed "s#$HOME#~#g")"
+  log "  earlier records in the log folder: $(ls "$LOGDIR" 2>/dev/null | grep -c _setup.txt) set-up run(s)"
+  [ -d "$CE_HOME" ] && log "  already in ~/CapitalEnergy: $(ls -A "$CE_HOME" 2>/dev/null | tr '\n' ' ')"
+  log "  port 7681 answers: $(curl -s -o /dev/null -m 3 -w '%{http_code}' http://127.0.0.1:7681/ 2>/dev/null)"
+  log "---- end of the description ----"
 }
 
 main() {
@@ -81,7 +157,10 @@ if ! mkdir "$LOCK" 2>/dev/null; then
 else
   echo $$ > "$LOCK/pid"
 fi
-trap 'rm -f "$LOCK/pid"; rmdir "$LOCK" 2>/dev/null' EXIT
+trap 'RC=$?; log ""; log "(run ended at $(date "+%H:%M:%S") with exit code $RC)"; rm -f "$LOCK/pid"; rmdir "$LOCK" 2>/dev/null' EXIT
+# This window's own terminal device (for example /dev/ttys003), for the programs that need the keyboard.
+TTYDEV="/dev/$(ps -o tty= -p $$ 2>/dev/null | tr -d ' ')"
+case "$TTYDEV" in /dev/tty?*) [ -c "$TTYDEV" ] || TTYDEV=/dev/tty ;; *) TTYDEV=/dev/tty ;; esac
 say "Capital Energy - setting up this Mac for the AI fleet (bootstrap $BV)"
 say "About 15 to 30 minutes. You may be asked for this Mac's password once, and your browser"
 say "opens for the sign-ins. Keep this window open until it says DONE."
@@ -90,6 +169,7 @@ say "and waits. If no new line appears for 3 minutes and it is not waiting for y
 say "window and paste the line again - it is safe to repeat and carries on where it stopped."
 say "Use only this one Terminal window. To start again: close this window first, then open a"
 say "new Terminal window and paste the line there."
+describe_mac
 
 step "1 of 7 - checking this Mac"
 MAJ="$(sw_vers -productVersion | cut -d. -f1)"
@@ -150,15 +230,22 @@ else
   say "  back to the front by itself."
   ( sleep 3; open "https://github.com/login/device" ) &
   flush_keys
-  GH_PROMPT_DISABLED=1 gh auth login --hostname github.com --git-protocol https --web --clipboard --scopes "read:org,user:email" < /dev/tty \
-    || stop "the GitHub sign-in did not finish."
+  run_seen "the GitHub sign-in" env GH_PROMPT_DISABLED=1 gh auth login --hostname github.com --git-protocol https --web --clipboard --scopes "read:org,user:email"
+  # judged by GitHub's own status, not the code the program returned
+  if ! gh auth status >/dev/null 2>&1; then
+    crashed && stop_fault "the GitHub sign-in program stopped before you were signed in."
+    stop "the GitHub sign-in did not finish (no sign-in was completed in the browser)."
+  fi
   come_back "The GitHub sign-in"
 fi
-gh auth setup-git >/dev/null 2>&1
-S="$(gh api "user/memberships/orgs/$ORG" --jq .state 2>/dev/null)"
+log "  (GitHub status: $(gh auth status 2>&1 | clean_text | awk 'NF' | sed 's/^ *//' | grep -v -i token | tr '\n' ';' | cut -c1-300))"
+gh auth setup-git >> "$LOG" 2>&1
+S="$(gh api "user/memberships/orgs/$ORG" --jq .state 2>>"$LOG")"
+log "  (Capital Energy membership on GitHub: ${S:-none})"
 if [ "$S" = pending ]; then
-  gh api -X PATCH "user/memberships/orgs/$ORG" -f state=active >/dev/null 2>&1
-  S="$(gh api "user/memberships/orgs/$ORG" --jq .state 2>/dev/null)"
+  gh api -X PATCH "user/memberships/orgs/$ORG" -f state=active >> "$LOG" 2>&1
+  S="$(gh api "user/memberships/orgs/$ORG" --jq .state 2>>"$LOG")"
+  log "  (membership after accepting: ${S:-none})"
 fi
 TRIES=0
 while [ "$S" != active ] && [ "$TRIES" -lt 3 ]; do
@@ -172,32 +259,31 @@ while [ "$S" != active ] && [ "$TRIES" -lt 3 ]; do
   say "    4. On the GitHub page that opens, leave \"Ask for a GitHub Copilot seat\" unticked"
   say "       and click the green \"Join cptlenergy\" button."
   pause "Then come back to this window and press Enter. "
-  S="$(gh api "user/memberships/orgs/$ORG" --jq .state 2>/dev/null)"
+  S="$(gh api "user/memberships/orgs/$ORG" --jq .state 2>>"$LOG")"
+  log "  (membership, try $TRIES: ${S:-none})"
 done
 [ "$S" = active ] && ok "member of the $ORG organization on GitHub" \
   || stop "this GitHub account is not in the $ORG organization yet. If there is no invitation email from GitHub, tell M: the invitation may not have been sent."
 
 step "4 of 7 - Claude Code sign-in (your browser opens a new tab; use your Capital Energy email)"
 A="$(claude auth status --text 2>&1)"
+log "  (Claude Code status before: $(echo "$A" | clean_text | awk 'NF' | tr '\n' ';' | cut -c1-300))"
 if ! echo "$A" | grep -qi -e "not logged" -e "not signed" -e "no account" && echo "$A" | grep -q "@"; then ok "Claude Code already signed in"
 else
   say "  A browser tab opens: sign in with your Capital Energy email and click Authorize."
   say "  This window then comes back to the front by itself."
   flush_keys
-  # Claude Code is given this window's own terminal device (for example /dev/ttys003), not the
-  # shortcut /dev/tty: given /dev/tty it crashed at once on the Mac with "EINVAL: invalid
-  # argument, kqueue" (first Mac test, 2026-10-13); typed by hand in the window, where its input
-  # is the window's own device, the same sign-in worked.
-  TTYDEV="/dev/$(ps -o tty= -p $$ 2>/dev/null | tr -d ' ')"
-  case "$TTYDEV" in /dev/tty?*) [ -c "$TTYDEV" ] || TTYDEV=/dev/tty ;; *) TTYDEV=/dev/tty ;; esac
-  echo "  (sign-in started on $TTYDEV)" >> "$LOG"
-  claude auth login < "$TTYDEV"; RC=$?
-  echo "  (sign-in program finished with code $RC)" >> "$LOG"
+  # Claude Code runs on this window's own terminal device, not the shortcut /dev/tty: given
+  # /dev/tty it crashed at once on the Mac with "EINVAL: invalid argument, kqueue" (first Mac
+  # test, 2026-10-13). From 1.0.9 it runs inside the Mac's script tool, which gives it a terminal
+  # of its own (as in every recorded browser terminal on a Mac) and records what it shows.
+  run_seen "the Claude Code sign-in" claude auth login; RC=$?
   A="$(claude auth status --text 2>&1)"
+  log "  (Claude Code status after: $(echo "$A" | clean_text | awk 'NF' | tr '\n' ';' | cut -c1-300))"
   if ! echo "$A" | grep -qi -e "not logged" -e "not signed" -e "no account" && echo "$A" | grep -q "@"; then
     come_back "The Claude Code sign-in"
     ok "Claude Code signed in"
-  elif [ "$RC" -ge 128 ] || [ "$RC" = 1 ]; then
+  elif crashed || [ "$RC" -ge 128 ] || [ "$RC" = 1 ]; then
     stop_fault "the Claude Code sign-in program stopped (code $RC) before you were signed in."
   else
     stop "the Claude Code sign-in did not finish (no sign-in was completed in the browser)."
@@ -221,7 +307,8 @@ fi
 step "6 of 7 - the member kit (one question comes up here and waits for your answer)"
 flush_keys
 bash "$CE_HOME/corpus/06_scripts_data/fleet_member/install_member.sh" 2>&1 | tee -a "$LOG"
-[ "${PIPESTATUS[0]}" = 0 ] || stop "the member kit reported a problem (read the lines above)."
+MK="${PIPESTATUS[0]}"; log "  (member kit finished with code $MK at $(date '+%H:%M:%S'))"
+[ "$MK" = 0 ] || stop "the member kit reported a problem (read the lines above)."
 
 step "7 of 7 - finishing"
 cp "$CE_HOME/.ce_member/START_PROMPT.md" "$CE_HOME/START_PROMPT.md" 2>/dev/null
@@ -231,7 +318,8 @@ MACHINE="$(python3 "$KIT/member_config.py" get machine 2>/dev/null)"
 if [ -n "$MACHINE" ] && [ -d "$CE_HOME/work/.git" ]; then
   mkdir -p "$CE_HOME/work/logs/setup/$MACHINE"
   ok "setup record will be saved to your work repository"
-  cp "$LOGDIR"/* "$CE_HOME/work/logs/setup/$MACHINE/" 2>/dev/null
+  log "  (record copied to the work repository at $(date '+%H:%M:%S'); this run reached step 7)"
+  mask_logs; cp "$LOGDIR"/* "$CE_HOME/work/logs/setup/$MACHINE/" 2>/dev/null
   run_long "sending the setup record to GitHub" 2 env CE_MEMBER_HOME="$CE_HOME" bash "$KIT/member_sync.sh" \
     && ok "setup record saved" || note "the setup record will go up with the next hourly sync"
 fi
