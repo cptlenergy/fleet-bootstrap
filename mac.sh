@@ -12,7 +12,7 @@
 # installs, its log folder, and your Claude Code settings.
 set -u
 ORG="cptlenergy"; CORPUS="Capital_Energy"; CE_HOME="$HOME/CapitalEnergy"
-BV="1.0.5"
+BV="1.0.6"
 LOGDIR="$HOME/Library/Logs/CapitalEnergy"; mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d_%H%M%S)_setup.txt"
 say() { echo "$*"; echo "$*" >> "$LOG"; }
@@ -201,7 +201,12 @@ open -a "Claude" 2>/dev/null
 open -a "Google Chrome" "https://claude.com/chrome" 2>/dev/null
 say ""
 say "DONE with the automatic part. Three things left:"
+say "  Do them one at a time, in this order. Finish 1 before you start 2: two sign-ins at once"
+say "  can get in each other's way."
 say "  1. The Claude app opened: sign in with your Capital Energy email (Continue with Google)."
+say "     If the sign-in keeps coming back: close extra browser tabs, type your Capital Energy"
+say "     email in the \"Enter your email\" box, click Continue with email, and type in the code"
+say "     that arrives in your email."
 say "  2. Google Chrome opened the Claude in Chrome page (Chrome, not Safari): click Add to Chrome,"
 say "     then sign it in with your Capital Energy email."
 say "  3. In the Claude app, open the Code tab, choose the folder CapitalEnergy in your home"

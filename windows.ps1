@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.5'
+$BV = '1.0.6'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -484,9 +484,14 @@ echo HELPERS_OK
     try { $script:SetupMutex.ReleaseMutex() } catch {}
     Say ''
     Say 'DONE with the automatic part. You can close this window. Three things left:' Green
+    Say '  Do them one at a time, in this order. Finish 1 before you start 2: two sign-ins at once'
+    Say '  can get in each other''s way.'
     Say '  1. The Claude app opened (a window with a black "Get started" button): click Get started,'
     Say '     then Continue with Google, and choose your Capital Energy email.'
     Say '     If it did not open: click Start, type Claude, click Claude.'
+    Say '     If the sign-in keeps coming back: close extra browser tabs, type your Capital Energy'
+    Say '     email in the "Enter your email" box, click Continue with email, and type in the code'
+    Say '     that arrives in your email.'
     Say '  2. Google Chrome opened on the Claude in Chrome page (Chrome, not Edge).'
     Say '     If Chrome first asks you to sign in to Chrome: click "Stay signed out" (not needed).'
     Say '     If Chrome says "Profile error occurred": click OK, close Chrome, open it again from Start.'

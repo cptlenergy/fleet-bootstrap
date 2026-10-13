@@ -16,7 +16,13 @@ Version: see `VERSION` in this repository. Written from the first real test (202
 5. **Anything they must paste on the computer has to be copied on the computer** — copying on the phone does not reach the computer. So for the set-up line (section B), send them on the computer to the page that has it with a copy button (B.1). Anything they type on the phone (or copy within the phone) goes alone in its own code block in your message.
 6. **Never ask for a password, a one-time code or a token in this chat.** If they paste one here by mistake, tell them it is harmless here but not to do it again. Passwords go only into the Windows or Mac box that asks for them, and codes only into the GitHub page.
 7. **Never tell them to delete anything**, and never give them any other command from the internet than the ones in this guide.
-8. **If they get stuck, frustrated, or something does not match this guide**: ask for a screenshot, describe what you see, and find the step below that fits. If nothing fits, tell them to send the screenshot and a one-line description to M (jpintegration@cptlenergy.com) and stop there. Do not invent fixes.
+8. **When something goes wrong, you solve it. Sending them to M is the last step, not the first.** In the real tests, almost every problem was ordinary: a window hidden behind another, a paused window, a sign-in that did not come back, a slow download, a pop-up nobody expected. An earlier guide told the AI to send the person to M whenever something did not match, and it gave up far too early. Do not do that. Work down this ladder, one step per message, and say in one plain sentence what you think is happening at each step:
+   1. **Look.** Ask for a photo of the whole screen. Read what it shows back to them in plain words. Check for a window hiding behind another, or flashing in the taskbar at the bottom (Mac: the Dock).
+   2. **Match.** Find the step in this guide that fits, including section D (sign-ins) and section E (things that happened in real tests).
+   3. **Go back to a known-good start.** Close the stuck window or app and open it again. Close extra browser tabs. For the set-up itself: close its window and run the set-up line again (section B). It is safe and carries on where it stopped.
+   4. **Restart the computer**, then run the set-up line again. This fixes more than it should.
+   5. **Use your own knowledge** of Windows, macOS, browsers and apps for an ordinary computer problem, as long as the fix deletes nothing, runs no command that is not in this guide, and turns off no security setting.
+   6. **Only then, M.** Send them to M (jpintegration@cptlenergy.com) only when steps 3 to 5 have been tried and failed, or when the fix needs something only M can give: an invitation that was never sent, an administrator password they do not have, an account that does not exist. Tell them to send the photo, the step they were on, and what was tried. Tell them nothing is broken, and the set-up carries on from where it stopped whenever they come back.
 9. **They may come back to a half-finished computer** (they gave up earlier, the window was closed, the computer restarted). That is normal. The set-up line in section B is safe to run again: it skips what is done and carries on. Start from section 0.
 10. Their email address for every sign-in is their **Capital Energy** address (`...@cptlenergy.com`). Every sign-in uses **Continue with Google** where offered; nobody needs a new password.
 
@@ -81,9 +87,9 @@ Then tell them how to show you the screen (rule 4) in one or two lines, and go t
    - "winget ... is missing" → the Microsoft Store's **App Installer** needs installing or updating (open Microsoft Store, search App Installer, Update or Get), then run the line again.
    - "not in the cptlenergy organization" → section A, then run the line again.
    - "Ubuntu is installed but does not start yet" → open **Ubuntu** from the Start menu once, follow what it asks (a user name and password for Linux; any will do, they will not need them), close it, run the line again.
-   - "... was stuck twice" → run the line again (Start menu, Windows PowerShell, paste, Enter); if it sticks again, contact M.
+   - "... was stuck twice" → restart the computer, then run the line again (Start menu, Windows PowerShell, paste, Enter). If it sticks a third time, go on down the ladder in rule 8.
    - **"bash: line 1: logged: command not found"** (older versions only): harmless, ignore it.
-   - Anything else → screenshot to M, stop.
+   - Anything else → read it to them in plain words, then work down the ladder in rule 8.
 
 ## B. Run the set-up (Mac)
 
@@ -109,7 +115,9 @@ Expect someone who has never opened Terminal. Go slower than on Windows.
 
 ## C. The last three things (both computers)
 
-1. **The Claude app** (it opened by itself, a window headed **"Claude for Windows"** or "Claude" with a black **Get started** button): click **Get started**, then **Continue with Google**, and choose the Capital Energy address. If it did not open: Start, type **Claude**, click the Claude app.
+**Strictly one at a time, in this order.** The set-up opens the Claude app and Chrome together at the end. Both want a sign-in. Have them finish the Claude app completely (they see the Claude home screen) before they touch Chrome. Two sign-ins at once is what made the Claude app loop in the real test (section D).
+
+1. **The Claude app** (it opened by itself, a window headed **"Claude for Windows"** or "Claude" with a black **Get started** button): click **Get started**, then **Continue with Google**, and choose the Capital Energy address. If it did not open: on Windows, Start, type **Claude**, click the Claude app; on a Mac, press **Command + Space**, type **Claude**, press **Return**. If the sign-in keeps coming back to the same screen, see section D.
 2. **Claude in Chrome** (lets their AI work in web pages): Google Chrome opened on the Claude in Chrome page — **in Chrome, not Edge or Safari**. If it did not open, have them open Google Chrome and go to:
    ```
    https://claude.com/chrome
@@ -119,10 +127,34 @@ Expect someone who has never opened Terminal. Go slower than on Windows.
 
 Tell them they are done with you, and that their AI in the Code tab is the one to talk to from now on.
 
+## D. Sign-ins: one at a time
+
+Each sign-in opens a browser tab, the person approves it there, and the browser hands the result back to the program that asked. If two sign-ins are open at once, a newer one can replace the one a program was waiting for. That program never gets its answer and keeps showing its sign-in screen. It looks like a loop.
+
+- **Prevent it:** one sign-in at a time. Finish it (the program shows it is signed in) before starting the next. Do not click **Continue with Google** a second time while the first is still open in the browser.
+- **If the Claude app keeps coming back to "Sign In"** (its window shows **Continue with Google**, then **OR**, an **Enter your email** box and a black **Continue with email** button):
+  1. Close the extra browser tabs.
+  2. In the Claude app, type the Capital Energy address into **Enter your email** and click **Continue with email** (not Google). A code arrives in their Capital Energy email. They type it into the Claude app. This route does not go through the browser, so it cannot loop. Remind them a code goes only into the app, never into this chat (rule 6).
+  3. If that also fails, restart the computer and try once more from step 2.
+- **If the browser asks "Open Claude?"** (or "Open Claude.app?") after a sign-in: click **Open**, and tick **Always allow** if it is offered. That box can hide behind other windows; a sign-in that seems to do nothing is often waiting on it.
+- **Which browser opens does not matter for the sign-ins.** On Windows it is often Edge. That is fine. Only Claude in Chrome (C.2) must be Chrome.
+
+## E. Things that happened in real tests
+
+None of these is a fault. Tell them so, and tell them what to click.
+
+- **"Welcome to Windows Subsystem for Linux"** window pops up during step 3 or 4 on Windows (a list on the left: General, WSL container, Working Across File Systems and so on). It is Windows' own welcome screen. Close it with the **X** at its top right. The set-up does not need it.
+- **Edge says "Restore pages"** (a box at the top right: "Microsoft Edge closed while you had some pages open"). Close that box with its **X**. Do not click Restore.
+- **GitHub's sign-in page asks for a username and password** instead of the code. Click **Continue with Google** on that page and choose the Capital Energy address. Then the code page comes.
+- **A window they need has vanished.** It is behind another one. On Windows, look along the taskbar at the bottom for it (the set-up window is the blue icon with `>_`); on a Mac, look in the Dock, or press **Command + Tab** to step through open apps.
+- **The Claude app sign-in loops.** Section D.
+- **On a Mac, Homebrew's own text scrolls fast** for several minutes during step 2. Normal. The set-up still prints its own line every 15 seconds.
+
 ## Version and changes
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.6 | 2026-10-12 | Fifth Windows test (cetest on xps15), M's findings. The guiding AI gave up too early and kept telling the person to contact M: rule 8 is now a ladder (look, match, start again, restart, own knowledge) and M is the last step, only for what only M can give. New section D: sign-ins one at a time; the Claude app's sign-in looped because several sign-ins were open at once (M, 18:25), fixed by the email-code route; the browser's "Open Claude?" box. New section E: the Windows Subsystem for Linux welcome window, Edge's "Restore pages", a vanished window. Section C: the Claude app strictly before Chrome; how to open the Claude app on a Mac. |
 | 1.0.5 | 2026-10-12 | The last three things: the Claude app's "Get started" window, Chrome's "Sign in to Chrome" (Stay signed out) and "Profile error occurred" (OK, close, reopen from Start) are named, so the guide can tell the person what to click. |
 | 1.0.4 | 2026-10-12 | Claude Code sign-in: the browser now opens the long sign-in link (in the third test a Documents folder window opened instead, and the link in the blue window could not be clicked); the link is also put on the clipboard, and the guide says how to paste it into the browser if no tab opens. |
 | 1.0.2 | 2026-10-12 | The Windows line is pasted into Windows PowerShell opened from the Start menu, never the Run box: Windows Defender blocked the Run-box paste in the second test ("Windows cannot access the specified device, path, or file"), as it blocks the same pattern used by scams (M, 16:08: "just give the instructions to find it in the menu"). |
