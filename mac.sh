@@ -12,7 +12,7 @@
 # installs, its log folder, and your Claude Code settings.
 set -u
 ORG="cptlenergy"; CORPUS="Capital_Energy"; CE_HOME="$HOME/CapitalEnergy"
-BV="1.0.7"
+BV="1.0.8"
 LOGDIR="$HOME/Library/Logs/CapitalEnergy"; mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d_%H%M%S)_setup.txt"
 say() { echo "$*"; echo "$*" >> "$LOG"; }
@@ -20,6 +20,9 @@ step() { say ""; say "==== $*"; }
 ok() { say "  OK    $*"; }
 note() { say "  NOTE  $*"; }
 stop() { say ""; say "STOPPED: $*"; say "Nothing is broken. Fix the one thing above, then paste the same line again."; report_stop; say "The full record of this run is in $LOGDIR"; exit 1; }
+# A fault in the set-up itself (a program crashed): the person cannot fix it, so the window says so
+# instead of "fix the one thing above" (first Mac test, 2026-10-13: nothing above named a fix).
+stop_fault() { say ""; say "STOPPED: $*"; say "This is a fault in the set-up, not something you did and not something you can fix here."; say "Nothing on this Mac is broken. Send the record to M:"; report_stop; say "The full record of this run is in $LOGDIR"; exit 1; }
 # When the set-up stops, the record of the run reaches M without the person hunting for it: sent to
 # their work repository on GitHub when it exists already; otherwise the folder holding it opens in
 # Finder, to be dragged into a reply to M's email (M, 2026-10-12).
@@ -85,6 +88,8 @@ say "opens for the sign-ins. Keep this window open until it says DONE."
 say "While it works it prints a line at least every 15 seconds. When it needs you, it says so"
 say "and waits. If no new line appears for 3 minutes and it is not waiting for you, close this"
 say "window and paste the line again - it is safe to repeat and carries on where it stopped."
+say "Use only this one Terminal window. To start again: close this window first, then open a"
+say "new Terminal window and paste the line there."
 
 step "1 of 7 - checking this Mac"
 MAJ="$(sw_vers -productVersion | cut -d. -f1)"
@@ -179,9 +184,24 @@ else
   say "  A browser tab opens: sign in with your Capital Energy email and click Authorize."
   say "  This window then comes back to the front by itself."
   flush_keys
-  claude auth login < /dev/tty || stop "the Claude Code sign-in did not finish."
-  come_back "The Claude Code sign-in"
-  ok "Claude Code signed in"
+  # Claude Code is given this window's own terminal device (for example /dev/ttys003), not the
+  # shortcut /dev/tty: given /dev/tty it crashed at once on the Mac with "EINVAL: invalid
+  # argument, kqueue" (first Mac test, 2026-10-13); typed by hand in the window, where its input
+  # is the window's own device, the same sign-in worked.
+  TTYDEV="/dev/$(ps -o tty= -p $$ 2>/dev/null | tr -d ' ')"
+  case "$TTYDEV" in /dev/tty?*) [ -c "$TTYDEV" ] || TTYDEV=/dev/tty ;; *) TTYDEV=/dev/tty ;; esac
+  echo "  (sign-in started on $TTYDEV)" >> "$LOG"
+  claude auth login < "$TTYDEV"; RC=$?
+  echo "  (sign-in program finished with code $RC)" >> "$LOG"
+  A="$(claude auth status --text 2>&1)"
+  if ! echo "$A" | grep -qi -e "not logged" -e "not signed" -e "no account" && echo "$A" | grep -q "@"; then
+    come_back "The Claude Code sign-in"
+    ok "Claude Code signed in"
+  elif [ "$RC" -ge 128 ] || [ "$RC" = 1 ]; then
+    stop_fault "the Claude Code sign-in program stopped (code $RC) before you were signed in."
+  else
+    stop "the Claude Code sign-in did not finish (no sign-in was completed in the browser)."
+  fi
 fi
 
 step "5 of 7 - the Capital Energy corpus (about 60 MB)"
@@ -198,7 +218,7 @@ else
   ok "corpus copied to $CE_HOME/corpus"
 fi
 
-step "6 of 7 - the member kit (one question comes up here: type y or n, then Return)"
+step "6 of 7 - the member kit (one question comes up here and waits for your answer)"
 flush_keys
 bash "$CE_HOME/corpus/06_scripts_data/fleet_member/install_member.sh" 2>&1 | tee -a "$LOG"
 [ "${PIPESTATUS[0]}" = 0 ] || stop "the member kit reported a problem (read the lines above)."
@@ -229,6 +249,16 @@ say "  2. Google Chrome opened the Claude in Chrome page (Chrome, not Safari): c
 say "     then sign it in with your Capital Energy email."
 say "  3. In the Claude app, open the Code tab, choose the folder CapitalEnergy in your home"
 say "     folder, click in the message box, press Command-V and Return. The AI takes it from there."
+say ""
+say "  The set-up put five buttons on your desktop (they start with \"CE\"): CE Claude Code,"
+say "  CE Terminal, CE Sync Now, CE Member Check, and CE Privacy Choices, which changes which of"
+say "  your folders the AI may look in. Your AI explains each one when you ask it."
+P="$(python3 "$KIT/member_config.py" get ttyd_port 2>/dev/null)"
+if [ -n "$P" ] && [ "$P" != 7681 ]; then
+  say "  This account's browser terminal is http://127.0.0.1:$P - not the usual 7681, because this"
+  say "  computer has another account using 7681. The CE Terminal button opens the right one."
+fi
+say "  (To use Claude Code yourself in Terminal, open a new Terminal window first.)"
 }
 # The whole script is read before anything runs (main is called on the last line),
 # so no installer below can swallow the rest of it from the pipe.

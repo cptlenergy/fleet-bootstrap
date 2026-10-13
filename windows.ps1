@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.7'
+$BV = '1.0.8'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -527,4 +527,8 @@ echo HELPERS_OK
     Say "  3. In the Claude app, open the Code tab, choose the folder $CeHome,"
     Say '     click in the message box, press Ctrl+V and Enter. The AI takes it from there.'
     Say "     (If Ctrl+V pastes something else: the same message is in $CeHome\START_PROMPT.md.)"
+    Say ''
+    Say '  The set-up put five buttons on your desktop (they start with "CE"): CE Claude Code,'
+    Say '  CE Terminal, CE Sync Now, CE Member Check, and CE Privacy Choices, which changes which of'
+    Say '  your folders the AI may look in. Your AI explains each one when you ask it.'
 }
