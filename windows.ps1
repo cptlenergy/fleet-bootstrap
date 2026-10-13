@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.4'
+$BV = '1.0.5'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -199,8 +199,19 @@ Say '     it is safe to repeat and carries on where it stopped.'
 if ($Phase -eq 1) {
     Step '1 of 8 - Windows programs (Git, Python, Chrome, the Claude app, Windows Terminal) - about 5 to 15 minutes'
     if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
-        Stop-Here 'winget (the Windows package installer) is missing. Open the Microsoft Store, search "App Installer", install or update it.'
+        # On a Windows account that is new, winget appears only once the Microsoft Store has
+        # registered it, which happens some time after the first sign-in; Microsoft gives this one
+        # command to ask for the registration now (learn.microsoft.com/windows/package-manager/winget,
+        # read 2026-10-12).
+        Say '  winget (the Windows package installer) is not ready on this account yet - asking Windows to set it up...'
+        try { Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe -ErrorAction Stop } catch {}
+        Start-Sleep -Seconds 5
+        $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User') + ';' + (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps')
     }
+    if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+        Stop-Here 'winget (the Windows package installer) is missing. Open the Microsoft Store, search "App Installer", click Get or Update, then paste the set-up line again.'
+    }
+    Ok 'winget (the Windows package installer) is ready'
     $apps = [ordered]@{ 'Git.Git' = 'Git'; 'Python.Python.3.12' = 'Python 3';
                         'Google.Chrome' = 'Google Chrome'; 'Anthropic.Claude' = 'the Claude desktop app';
                         'Microsoft.WindowsTerminal' = 'Windows Terminal' }
@@ -375,7 +386,8 @@ echo HELPERS_OK
         Say '  in the taskbar at the bottom of the screen.'
         Start-Sleep -Seconds 3
         Flush-Keys
-        Start-Process 'https://github.com/login/device'
+        # As the person, not as administrator (explorer.exe hands it to their own desktop).
+        Start-Process -FilePath (Join-Path $env:windir 'explorer.exe') -ArgumentList 'https://github.com/login/device'
         if ((Wsl-Ce "$browser; export WAYLAND_DISPLAY= DISPLAY=:0 GH_PROMPT_DISABLED=1; gh auth login --hostname github.com --git-protocol https --web --clipboard --scopes read:org,user:email") -ne 0) {
             Stop-Here 'the GitHub sign-in did not finish.' }
         Come-Back 'The GitHub sign-in'
@@ -417,7 +429,7 @@ echo HELPERS_OK
     }
     Ok 'Claude Code signed in'
 
-    Step '7 of 8 - the Capital Energy corpus (about 60 MB) and the member kit (three privacy questions come up here)'
+    Step '7 of 8 - the Capital Energy corpus (about 60 MB) and the member kit (one question comes up here: type y or n, then Enter)'
     New-Item -ItemType Directory -Force -Path $CeHome | Out-Null
     $corpusWin = Join-Path $CeHome 'corpus'
     $corpusWsl = To-Wsl $corpusWin
@@ -435,7 +447,7 @@ echo HELPERS_OK
     }
     $kitWsl = "$corpusWsl/06_scripts_data/fleet_member"
     Flush-Keys
-    if ((Wsl-Ce "bash '$kitWsl/install_member.sh'") -ne 0) { Stop-Here 'the member kit reported a problem (read the lines above).' }
+    if ((Wsl-Ce "CE_DEFER_CHECK=1 bash '$kitWsl/install_member.sh'") -ne 0) { Stop-Here 'the member kit reported a problem (read the lines above).' }
     Say '  starting the background services (the hourly sync and the browser terminal)...'
     $r = (& wsl.exe -d Ubuntu -u root -- bash "$kitWsl/wsl/root_setup.sh") -join "`n"
     Say $r
@@ -444,6 +456,10 @@ echo HELPERS_OK
     Step '8 of 8 - finishing on the Windows side'
     $kitWin = Join-Path $corpusWin '06_scripts_data\fleet_member'
     & $PS64 -NoProfile -ExecutionPolicy Bypass -File (Join-Path $kitWin 'wsl\windows_finish.ps1') -KitDir $kitWin
+    # The whole-set-up check runs last, once the background services and the keep-alive run.
+    Start-Sleep -Seconds 5
+    Say '  checking the whole set-up (PASS lines; a FAIL line says what to do):'
+    [void](Wsl-Ce "bash '$kitWsl/member_check.sh'")
     $sp = Join-Path $CeHome '.ce_member\START_PROMPT.md'
     if (Test-Path $sp) {
         Copy-Item -Force $sp (Join-Path $CeHome 'START_PROMPT.md')
@@ -451,7 +467,9 @@ echo HELPERS_OK
         Ok 'the start prompt is on your clipboard'
     }
     $claudeExe = Join-Path $env:LOCALAPPDATA 'AnthropicClaude\claude.exe'
-    if (Test-Path $claudeExe) { Start-Process $claudeExe }
+    # The Claude app starts as the person, not as administrator (a program started from this
+    # window directly would run as administrator; Chrome did, and showed a profile error).
+    if (Test-Path $claudeExe) { Start-Process -FilePath (Join-Path $env:windir 'explorer.exe') -ArgumentList ('"' + $claudeExe + '"') }
 
     # The setup record goes into the work repository, so M's sessions can read what happened.
     try { Stop-Transcript | Out-Null } catch {}
@@ -465,10 +483,16 @@ echo HELPERS_OK
     }
     try { $script:SetupMutex.ReleaseMutex() } catch {}
     Say ''
-    Say 'DONE with the automatic part. Three things left:' Green
-    Say '  1. The Claude app opened: sign in with your Capital Energy email (Continue with Google).'
-    Say '  2. Google Chrome opened the Claude in Chrome page (Chrome, not Edge): click Add to Chrome,'
-    Say '     then sign it in with your Capital Energy email.'
+    Say 'DONE with the automatic part. You can close this window. Three things left:' Green
+    Say '  1. The Claude app opened (a window with a black "Get started" button): click Get started,'
+    Say '     then Continue with Google, and choose your Capital Energy email.'
+    Say '     If it did not open: click Start, type Claude, click Claude.'
+    Say '  2. Google Chrome opened on the Claude in Chrome page (Chrome, not Edge).'
+    Say '     If Chrome first asks you to sign in to Chrome: click "Stay signed out" (not needed).'
+    Say '     If Chrome says "Profile error occurred": click OK, close Chrome, open it again from Start.'
+    Say '     On the Claude in Chrome page: click Add to Chrome, then Add extension, then sign it in'
+    Say '     with your Capital Energy email.'
     Say "  3. In the Claude app, open the Code tab, choose the folder $CeHome,"
     Say '     click in the message box, press Ctrl+V and Enter. The AI takes it from there.'
+    Say "     (If Ctrl+V pastes something else: the same message is in $CeHome\START_PROMPT.md.)"
 }

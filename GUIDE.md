@@ -109,12 +109,12 @@ Expect someone who has never opened Terminal. Go slower than on Windows.
 
 ## C. The last three things (both computers)
 
-1. **The Claude app** (it opened by itself): sign in with **Continue with Google**, Capital Energy address.
+1. **The Claude app** (it opened by itself, a window headed **"Claude for Windows"** or "Claude" with a black **Get started** button): click **Get started**, then **Continue with Google**, and choose the Capital Energy address. If it did not open: Start, type **Claude**, click the Claude app.
 2. **Claude in Chrome** (lets their AI work in web pages): Google Chrome opened on the Claude in Chrome page — **in Chrome, not Edge or Safari**. If it did not open, have them open Google Chrome and go to:
    ```
    https://claude.com/chrome
    ```
-   Click **Add to Chrome**, then **Add extension**, then sign it in with the Capital Energy address.
+   If Chrome first shows its own welcome screens — **"Sign in to Chrome"** with **Sign in** and **Stay signed out** buttons, or a list of choices with **Get started** — they click **Stay signed out** (or **Skip** / **No thanks**): signing in to Chrome itself is not needed for the set-up. If Chrome shows **"Profile error occurred"**, they click **OK**, close every Chrome window, and open Chrome again from the Start menu. Then **Add to Chrome**, then **Add extension**, then sign the extension in with the Capital Energy address.
 3. **The first conversation with their own AI on the computer:** in the Claude app, open the **Code** tab, choose the folder **CapitalEnergy** in their home folder (Windows: `C:\Users\<their name>\CapitalEnergy`), click in the message box, press **Ctrl + V** (Mac: **Command + V**) and **Enter**. The start message was put on the clipboard by the set-up. If the clipboard has something else by now, the same message is in the file `START_PROMPT.md` inside the CapitalEnergy folder: open it, select all, copy, paste. That AI checks the whole set-up and gives them the tour. Ask for a screenshot if the Code tab looks different from this description.
 
 Tell them they are done with you, and that their AI in the Code tab is the one to talk to from now on.
@@ -123,6 +123,7 @@ Tell them they are done with you, and that their AI in the Code tab is the one t
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.5 | 2026-10-12 | The last three things: the Claude app's "Get started" window, Chrome's "Sign in to Chrome" (Stay signed out) and "Profile error occurred" (OK, close, reopen from Start) are named, so the guide can tell the person what to click. |
 | 1.0.4 | 2026-10-12 | Claude Code sign-in: the browser now opens the long sign-in link (in the third test a Documents folder window opened instead, and the link in the blue window could not be clicked); the link is also put on the clipboard, and the guide says how to paste it into the browser if no tab opens. |
 | 1.0.2 | 2026-10-12 | The Windows line is pasted into Windows PowerShell opened from the Start menu, never the Run box: Windows Defender blocked the Run-box paste in the second test ("Windows cannot access the specified device, path, or file"), as it blocks the same pattern used by scams (M, 16:08: "just give the instructions to find it in the menu"). |
 | 1.0.1 | 2026-10-12 | First version, written from the first Windows test (cetest on xps17) by the (AV) M session on xps17. Phone-first (M, 15:19: guide from the phone, photos of the screen, voice; screenshot keys only when no phone); the set-up line is copied on the computer from the public page's copy button. |

@@ -12,7 +12,7 @@
 # installs, its log folder, and your Claude Code settings.
 set -u
 ORG="cptlenergy"; CORPUS="Capital_Energy"; CE_HOME="$HOME/CapitalEnergy"
-BV="1.0.4"
+BV="1.0.5"
 LOGDIR="$HOME/Library/Logs/CapitalEnergy"; mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d_%H%M%S)_setup.txt"
 say() { echo "$*"; echo "$*" >> "$LOG"; }
@@ -180,7 +180,7 @@ else
   ok "corpus copied to $CE_HOME/corpus"
 fi
 
-step "6 of 7 - the member kit (three privacy questions come up here)"
+step "6 of 7 - the member kit (one question comes up here: type y or n, then Return)"
 flush_keys
 bash "$CE_HOME/corpus/06_scripts_data/fleet_member/install_member.sh" 2>&1 | tee -a "$LOG"
 [ "${PIPESTATUS[0]}" = 0 ] || stop "the member kit reported a problem (read the lines above)."
