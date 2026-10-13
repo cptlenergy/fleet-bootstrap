@@ -12,14 +12,32 @@
 # installs, its log folder, and your Claude Code settings.
 set -u
 ORG="cptlenergy"; CORPUS="Capital_Energy"; CE_HOME="$HOME/CapitalEnergy"
-BV="1.0.6"
+BV="1.0.7"
 LOGDIR="$HOME/Library/Logs/CapitalEnergy"; mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d_%H%M%S)_setup.txt"
 say() { echo "$*"; echo "$*" >> "$LOG"; }
 step() { say ""; say "==== $*"; }
 ok() { say "  OK    $*"; }
 note() { say "  NOTE  $*"; }
-stop() { say ""; say "STOPPED: $*"; say "Nothing is broken. Fix the one thing above, then paste the same line again."; say "The full record of this run is in $LOGDIR"; exit 1; }
+stop() { say ""; say "STOPPED: $*"; say "Nothing is broken. Fix the one thing above, then paste the same line again."; report_stop; say "The full record of this run is in $LOGDIR"; exit 1; }
+# When the set-up stops, the record of the run reaches M without the person hunting for it: sent to
+# their work repository on GitHub when it exists already; otherwise the folder holding it opens in
+# Finder, to be dragged into a reply to M's email (M, 2026-10-12).
+report_stop() {
+  local kit="$CE_HOME/corpus/06_scripts_data/fleet_member" m
+  if [ -d "$CE_HOME/work/.git" ] && [ -f "$kit/member_sync.sh" ]; then
+    m="$(python3 "$kit/member_config.py" get machine 2>/dev/null)"
+    if [ -n "$m" ]; then
+      mkdir -p "$CE_HOME/work/logs/setup/$m"; cp "$LOGDIR"/* "$CE_HOME/work/logs/setup/$m/" 2>/dev/null
+      if CE_MEMBER_HOME="$CE_HOME" bash "$kit/member_sync.sh" >/dev/null 2>&1; then
+        say "  The record of this run has been sent to M automatically: just send M a photo of this window."; return
+      fi
+    fi
+  fi
+  open "$LOGDIR" 2>/dev/null
+  say "  A Finder window has opened with the record of this run. Reply to M's set-up email,"
+  say "  drag the files from that Finder window into the reply, and add a photo of this window."
+}
 # Keys pressed while the set-up was busy must never answer the next question: throw them away first.
 flush_keys() { while read -r -t 0.05 -n 1000 _ < /dev/tty 2>/dev/null; do :; done; }
 pause() { flush_keys; printf "  %s" "$1" > /dev/tty; read -r _ < /dev/tty; }
@@ -38,7 +56,7 @@ run_long() {
     sleep 1; n=$((n+1))
     if [ $((n % 15)) = 0 ] && kill -0 "$pid" 2>/dev/null; then
       local el=$((SECONDS - t0)) last
-      last="$(tail -n 5 "$f" 2>/dev/null | tr -c '[:print:]\n' ' ' | sed 's/  */ /g;s/^ //;s/ $//' | awk 'length >= 4' | tail -n 1 | cut -c1-60)"
+      last="$(tail -n 5 "$f" 2>/dev/null | tr -c '[:print:]\n' ' ' | sed 's/  */ /g;s/^ //;s/ $//' | awk 'length >= 4' | tail -n 1 | sed 's#https*://[^ ]*#(web address)#g' | cut -c1-40)"
       say "    still working: $what - $((el / 60)):$(printf %02d $((el % 60))) so far (normal: up to $normal min)${last:+ - $last}"
       [ "$el" -gt $((normal * 180)) ] && say "    (slower than normal; a slow internet connection does this. Keep waiting.)"
     fi

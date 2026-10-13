@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.6'
+$BV = '1.0.7'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -42,11 +42,36 @@ function Ask-Word([string]$t, [string]$word) {
 function Stop-Here($t) {
     Say ''; Say "STOPPED: $t" Red
     Say 'Nothing is broken. Fix the one thing above, then paste the same line again.'
+    Report-Stop
     Say "The full record of this run is in the folder $LogDir"
     try { Stop-Transcript | Out-Null } catch {}
     try { $script:SetupMutex.ReleaseMutex() } catch {}
     Ask-Enter 'Press Enter to close this window'
     exit 1
+}
+# When the set-up stops, the record of the run reaches M without the person hunting for it: sent
+# to their work repository on GitHub when it exists already; otherwise the folder holding it opens,
+# to be dragged into a reply to M's email (M, 2026-10-12: how do we get information from someone
+# in another state when an install fails?).
+function Report-Stop {
+    try {
+        $kitW = Join-Path $CeHome 'corpus\06_scripts_data\fleet_member'
+        if ((Test-Path (Join-Path $CeHome 'work\.git')) -and (Test-Path (Join-Path $kitW 'member_sync.sh'))) {
+            $kitL = To-Wsl $kitW
+            $m = ((& wsl.exe -d Ubuntu -u ce -- python3 "$kitL/member_config.py" get machine) -join '').Trim()
+            if ($m) {
+                $dest = Join-Path $CeHome "work\logs\setup\$m"
+                New-Item -ItemType Directory -Force -Path $dest | Out-Null
+                Copy-Item -Force (Join-Path $LogDir '*') $dest
+                $p = Start-Process -FilePath 'wsl.exe' -NoNewWindow -Wait -PassThru `
+                    -ArgumentList ('-d Ubuntu -u ce -- bash -lc "bash ''' + $kitL + '/member_sync.sh''"')
+                if ($p.ExitCode -eq 0) { Say '  The record of this run has been sent to M automatically: just send M a photo of this window.' Green; return }
+            }
+        }
+    } catch {}
+    try { Start-Process -FilePath (Join-Path $env:windir 'explorer.exe') -ArgumentList ('"' + $LogDir + '"') } catch {}
+    Say "  A folder window has opened with the record of this run. Reply to M's set-up email," Yellow
+    Say '  drag the files from that folder window into the reply, and add a photo of this window.' Yellow
 }
 # Runs a slow command that asks nothing, with its output going to a log file, and prints a
 # line every 15 seconds: how long so far, the normal time, and the command's latest line.
@@ -71,7 +96,9 @@ function Run-Long([string]$what, [string]$exe, [string]$argList, [int]$normalMin
                 if ($l) { $last = $l }
             }
         }
-        if ($last.Length -gt 60) { $last = $last.Substring(0, 60) + '...' }
+        # Short, so the line fits the window: web addresses are named, not printed (they wrapped).
+        $last = $last -replace 'https?://\S+', '(web address)'
+        if ($last.Length -gt 40) { $last = $last.Substring(0, 40) + '...' }
         $msg = '    still working: {0} - {1}:{2:00} so far (normal: up to {3} min)' -f $what, [int][Math]::Floor($el.TotalMinutes), $el.Seconds, $normalMin
         if ($last) { $msg += " - $last" }
         Say $msg

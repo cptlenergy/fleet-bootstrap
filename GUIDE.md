@@ -90,6 +90,7 @@ Then tell them how to show you the screen (rule 4) in one or two lines, and go t
    - "... was stuck twice" → restart the computer, then run the line again (Start menu, Windows PowerShell, paste, Enter). If it sticks a third time, go on down the ladder in rule 8.
    - **"bash: line 1: logged: command not found"** (older versions only): harmless, ignore it.
    - Anything else → read it to them in plain words, then work down the ladder in rule 8.
+   - Under the STOPPED line (from 1.0.7) the window says either **"The record of this run has been sent to M automatically"** — then they only send M a photo of the window — or that **a folder window has opened** (Finder on a Mac) with the record: they reply to M's set-up email, drag the files from that folder window into the reply, and add the photo. Help them with the drag if needed; it is the record M needs to see what happened.
 
 ## B. Run the set-up (Mac)
 
@@ -154,6 +155,7 @@ None of these is a fault. Tell them so, and tell them what to click.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0.7 | 2026-10-12 | When the set-up stops, the window says the record was sent to M automatically or opens the folder holding it to attach to a reply to M's email; the guide tells the person which. |
 | 1.0.6 | 2026-10-12 | Fifth Windows test (cetest on xps15), M's findings. The guiding AI gave up too early and kept telling the person to contact M: rule 8 is now a ladder (look, match, start again, restart, own knowledge) and M is the last step, only for what only M can give. New section D: sign-ins one at a time; the Claude app's sign-in looped because several sign-ins were open at once (M, 18:25), fixed by the email-code route; the browser's "Open Claude?" box. New section E: the Windows Subsystem for Linux welcome window, Edge's "Restore pages", a vanished window. Section C: the Claude app strictly before Chrome; how to open the Claude app on a Mac. |
 | 1.0.5 | 2026-10-12 | The last three things: the Claude app's "Get started" window, Chrome's "Sign in to Chrome" (Stay signed out) and "Profile error occurred" (OK, close, reopen from Start) are named, so the guide can tell the person what to click. |
 | 1.0.4 | 2026-10-12 | Claude Code sign-in: the browser now opens the long sign-in link (in the third test a Documents folder window opened instead, and the link in the blue window could not be clicked); the link is also put on the clipboard, and the guide says how to paste it into the browser if no tab opens. |
