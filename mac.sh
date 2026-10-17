@@ -17,7 +17,7 @@
 # installs, its log folder, and your Claude Code settings.
 set -u
 ORG="cptlenergy"; CORPUS="Capital_Energy"; CE_HOME="$HOME/CapitalEnergy"
-BV="1.0.10"
+BV="1.0.11"
 LOGDIR="$HOME/Library/Logs/CapitalEnergy"; mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d_%H%M%S)_setup.txt"
 say() { echo "$*"; echo "$*" >> "$LOG"; }
@@ -176,7 +176,7 @@ MAJ="$(sw_vers -productVersion | cut -d. -f1)"
 [ "$MAJ" -ge 13 ] 2>/dev/null || stop "this Mac runs macOS $(sw_vers -productVersion); Claude Code needs macOS 13 or newer (Apple menu > System Settings > General > Software Update)."
 ok "macOS $(sw_vers -productVersion) on $(scutil --get ComputerName 2>/dev/null)"
 
-step "2 of 7 - tools (git, GitHub, tmux, ttyd, Claude Code, Chrome, the Claude app) - about 5 to 15 minutes"
+step "2 of 7 - tools (git, GitHub, tmux, ttyd, Claude Code, Chrome, the Claude app, Google Drive) - about 5 to 20 minutes"
 for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do [ -x "$b" ] && eval "$("$b" shellenv)" && break; done
 if ! command -v brew >/dev/null 2>&1; then
   say "  Homebrew (the Mac's package installer) is not here yet - installing it (about 5 minutes;"
@@ -215,6 +215,19 @@ if [ ! -d "/Applications/Claude.app" ]; then
   [ "$BREW_OK" = 1 ] && run_long "installing the Claude desktop app" 5 brew install --cask claude && ok "Claude desktop app installed" \
     || { note "the Claude desktop app is not installed - the download page opens; install it, then come back"; open "https://claude.ai/download"; pause "Press Enter when the Claude app is installed. "; }
 else ok "Claude desktop app present"; fi
+# Google Drive (1.0.11, kit 1.0.24): photos, PDFs and other files that are not text go to the shared
+# drive "Field Correspondents", never to GitHub. Cask checked 2026-10-17 on Js-MacBook-Pro (brew info
+# --cask google-drive: 132.0.0, a .pkg, so it needs the password). It is not needed for the rest of the
+# set-up, so a failure here never stops it.
+if [ ! -d "/Applications/Google Drive.app" ]; then
+  GD=0
+  if [ "$BREW_OK" = 1 ]; then
+    say "  Google Drive's installer needs this Mac's password (nothing shows while you type), then Enter."
+    sudo -v < /dev/tty && run_long "installing Google Drive" 5 brew install --cask google-drive && GD=1
+  fi
+  if [ "$GD" = 1 ]; then ok "Google Drive installed"
+  else note "Google Drive did not install by itself - nothing else needs it today; your AI helps you install it later"; fi
+else ok "Google Drive present"; fi
 if ! command -v claude >/dev/null 2>&1; then
   run_long "installing Claude Code" 3 bash -c 'curl -fsSL https://claude.ai/install.sh | bash' || stop "Claude Code did not install."
   export PATH="$HOME/.local/bin:$PATH"
@@ -326,7 +339,7 @@ fi
 open -a "Claude" 2>/dev/null
 open -a "Google Chrome" "https://claude.com/chrome" 2>/dev/null
 say ""
-say "DONE with the automatic part. Three things left:"
+say "DONE with the automatic part. Four things left:"
 say "  Do them one at a time, in this order. Finish 1 before you start 2: two sign-ins at once"
 say "  can get in each other's way."
 say "  1. The Claude app opened: sign in with your Capital Energy email (Continue with Google)."
@@ -335,12 +348,17 @@ say "     email in the \"Enter your email\" box, click Continue with email, and 
 say "     that arrives in your email."
 say "  2. Google Chrome opened the Claude in Chrome page (Chrome, not Safari): click Add to Chrome,"
 say "     then sign it in with your Capital Energy email."
-say "  3. In the Claude app, open the Code tab, choose the folder CapitalEnergy in your home"
+say "  3. Google Drive: open it (Finder, Applications, Google Drive; it may be open already). Click"
+say "     Sign in with browser, choose your Capital Energy email, and allow it. That is all: the"
+say "     sync copies your photos, PDFs and other files that are not text there. If Google Drive is"
+say "     not in Applications: skip this step; your AI helps you later."
+say "  4. In the Claude app, open the Code tab, choose the folder CapitalEnergy in your home"
 say "     folder, click in the message box, press Command-V and Return. The AI takes it from there."
 say ""
-say "  The set-up put five buttons on your desktop (they start with \"CE\"): CE Claude Code,"
-say "  CE Terminal, CE Sync Now, CE Member Check, and CE Privacy Choices, which changes which of"
-say "  your folders the AI may look in. Your AI explains each one when you ask it."
+say "  The set-up put six buttons on your desktop (they start with \"CE\"): CE Claude Code,"
+say "  CE Terminal, CE Sync Now, CE Get Partner Changes, CE Member Check, and CE Privacy Choices,"
+say "  which changes which of your folders the AI may look in. Your AI explains each one when"
+say "  you ask it."
 P="$(python3 "$KIT/member_config.py" get ttyd_port 2>/dev/null)"
 if [ -n "$P" ] && [ "$P" != 7681 ]; then
   say "  This account's browser terminal is http://127.0.0.1:$P - not the usual 7681, because this"

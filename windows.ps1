@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.10'
+$BV = '1.0.11'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -224,7 +224,7 @@ Say '  2. still nothing after another minute: close this window and paste the li
 Say '     it is safe to repeat and carries on where it stopped.'
 
 if ($Phase -eq 1) {
-    Step '1 of 8 - Windows programs (Git, Python, Chrome, the Claude app, Windows Terminal) - about 5 to 15 minutes'
+    Step '1 of 8 - Windows programs (Git, Python, Chrome, the Claude app, Google Drive, Windows Terminal) - about 5 to 20 minutes'
     if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
         # On a Windows account that is new, winget appears only once the Microsoft Store has
         # registered it, which happens some time after the first sign-in; Microsoft gives this one
@@ -241,7 +241,10 @@ if ($Phase -eq 1) {
     Ok 'winget (the Windows package installer) is ready'
     $apps = [ordered]@{ 'Git.Git' = 'Git'; 'Python.Python.3.12' = 'Python 3';
                         'Google.Chrome' = 'Google Chrome'; 'Anthropic.Claude' = 'the Claude desktop app';
-                        'Microsoft.WindowsTerminal' = 'Windows Terminal' }
+                        'Google.GoogleDrive' = 'Google Drive'; 'Microsoft.WindowsTerminal' = 'Windows Terminal' }
+    # Google Drive (1.0.11, kit 1.0.24): photos, PDFs and other files that are not text go to the
+    # shared drive "Field Correspondents", never to GitHub. winget id checked 2026-10-17 on xps17
+    # (winget show --id Google.GoogleDrive: Google Drive 132.0.0.0, Google LLC).
     $n = 0
     foreach ($id in $apps.Keys) {
         $n++
@@ -514,7 +517,7 @@ echo HELPERS_OK
     }
     try { $script:SetupMutex.ReleaseMutex() } catch {}
     Say ''
-    Say 'DONE with the automatic part. You can close this window. Three things left:' Green
+    Say 'DONE with the automatic part. You can close this window. Four things left:' Green
     Say '  Do them one at a time, in this order. Finish 1 before you start 2: two sign-ins at once'
     Say '  can get in each other''s way.'
     Say '  1. The Claude app opened (a window with a black "Get started" button): click Get started,'
@@ -528,11 +531,16 @@ echo HELPERS_OK
     Say '     If Chrome says "Profile error occurred": click OK, close Chrome, open it again from Start.'
     Say '     On the Claude in Chrome page: click Add to Chrome, then Add extension, then sign it in'
     Say '     with your Capital Energy email.'
-    Say "  3. In the Claude app, open the Code tab, choose the folder $CeHome,"
+    Say '  3. Google Drive: click Start, type Google Drive, click Google Drive (it may be open already).'
+    Say '     Click Sign in with browser, choose your Capital Energy email, and allow it.'
+    Say '     That is all: the sync copies your photos, PDFs and other files that are not text there.'
+    Say '     If Google Drive is not in the Start menu: skip this step; your AI helps you later.'
+    Say "  4. In the Claude app, open the Code tab, choose the folder $CeHome,"
     Say '     click in the message box, press Ctrl+V and Enter. The AI takes it from there.'
     Say "     (If Ctrl+V pastes something else: the same message is in $CeHome\START_PROMPT.md.)"
     Say ''
-    Say '  The set-up put five buttons on your desktop (they start with "CE"): CE Claude Code,'
-    Say '  CE Terminal, CE Sync Now, CE Member Check, and CE Privacy Choices, which changes which of'
-    Say '  your folders the AI may look in. Your AI explains each one when you ask it.'
+    Say '  The set-up put six buttons on your desktop (they start with "CE"): CE Claude Code,'
+    Say '  CE Terminal, CE Sync Now, CE Get Partner Changes, CE Member Check, and CE Privacy Choices,'
+    Say '  which changes which of your folders the AI may look in. Your AI explains each one when'
+    Say '  you ask it.'
 }
