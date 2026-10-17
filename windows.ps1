@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.9'
+$BV = '1.0.10'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -255,8 +255,12 @@ if ($Phase -eq 1) {
     }
 
     Step '2 of 8 - the Linux part of Windows (WSL) - about 2 to 10 minutes'
-    & wsl.exe --status *> $null
-    if ($LASTEXITCODE -ne 0) {
+    # 1.0.17: on a computer without WSL the check itself must not stop the set-up. With
+    # ErrorActionPreference Stop, Windows PowerShell 5.1 turns wsl.exe's complaint (or a missing
+    # wsl.exe) into a stopping error; Wil's laptop died here (2026-10-15). A failed check means "install".
+    $wslReady = $false
+    try { & wsl.exe --status *> $null; $wslReady = ($LASTEXITCODE -eq 0) } catch { $wslReady = $false }
+    if (-not $wslReady) {
         [void](Run-Long 'installing WSL' 'wsl.exe' '--install --no-distribution' 10)
         $ro = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce'
         New-Item -Force -Path $ro | Out-Null
