@@ -17,7 +17,7 @@
 # installs, its log folder, and your Claude Code settings.
 set -u
 ORG="cptlenergy"; CORPUS="Capital_Energy"; CE_HOME="$HOME/CapitalEnergy"
-BV="1.0.11"
+BV="1.0.12"
 LOGDIR="$HOME/Library/Logs/CapitalEnergy"; mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d_%H%M%S)_setup.txt"
 say() { echo "$*"; echo "$*" >> "$LOG"; }
@@ -355,7 +355,7 @@ say "     not in Applications: skip this step; your AI helps you later."
 say "  4. In the Claude app, open the Code tab, choose the folder CapitalEnergy in your home"
 say "     folder, click in the message box, press Command-V and Return. The AI takes it from there."
 say ""
-say "  The set-up put six buttons on your desktop (they start with \"CE\"): CE Claude Code,"
+say "  The set-up put seven buttons on your desktop (they start with \"CE\"): CE Claude Code, CE Email,"
 say "  CE Terminal, CE Sync Now, CE Get Partner Changes, CE Member Check, and CE Privacy Choices,"
 say "  which changes which of your folders the AI may look in. Your AI explains each one when"
 say "  you ask it."

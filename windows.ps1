@@ -11,7 +11,7 @@
 # Safe to run again: it skips whatever is already done. It deletes nothing.
 param([int]$Phase = 1)
 $ErrorActionPreference = 'Stop'
-$BV = '1.0.11'
+$BV = '1.0.12'
 $Org = 'cptlenergy'; $Corpus = 'Capital_Energy'
 $Url = 'https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/windows.ps1'
 $State = Join-Path $env:LOCALAPPDATA 'CapitalEnergy'
@@ -333,10 +333,18 @@ echo PREP_OK
 '@
     $prepFile = Join-Path $State 'wsl_prep.sh'
     [IO.File]::WriteAllText($prepFile, ($prep -replace "`r`n", "`n"))
-    [void](Run-Long 'installing the Linux tools' 'wsl.exe' ('-d Ubuntu -u root -- bash ' + (To-Wsl $prepFile)) 8)
+    # 1.0.12: the script's path is quoted. A Windows user folder with a space in its name
+    # (C:\Users\First Last, first seen 2026-10-20) cut the unquoted path in two: bash looked for
+    # /mnt/c/Users/First, nothing was installed, and the old log check still printed OK. Success is
+    # now read from Ubuntu itself (the user ce and the tools), never from a log file alone.
+    $prepRc = Run-Long 'installing the Linux tools' 'wsl.exe' ('-d Ubuntu -u root -- bash "' + (To-Wsl $prepFile) + '"') 8
     $prepLog = Get-ChildItem $LogDir -Filter '*installing_the_Linux_tools.log' | Sort-Object LastWriteTime | Select-Object -Last 1
-    $out = if ($prepLog) { Get-Content -Raw $prepLog.FullName } else { '' }
-    if ($out -notmatch 'PREP_OK') { Stop-Here "the Linux tools did not install (the record is $($prepLog.FullName))." }
+    $out = ''
+    if ($prepLog) { $out = [string](Get-Content -Raw $prepLog.FullName) }
+    $prepSeen = ((& wsl.exe -d Ubuntu -u root -- bash -c 'id ce >/dev/null 2>&1 && which git gh tmux ttyd python3 >/dev/null 2>&1 && echo PREP_VERIFIED') -join '').Trim()
+    if (($prepRc -ne 0) -or ($out -notmatch 'PREP_OK') -or ($prepSeen -ne 'PREP_VERIFIED')) {
+        Stop-Here "the Linux tools did not install (code $prepRc; the record is in $LogDir)."
+    }
     if ($out -match 'WSLCONF_CHANGED') { & wsl.exe --terminate Ubuntu *> $null; Start-Sleep -Seconds 3 }
     Ok 'git, gh, tmux, ttyd, python3 installed; user ce ready'
 
@@ -539,7 +547,7 @@ echo HELPERS_OK
     Say '     click in the message box, press Ctrl+V and Enter. The AI takes it from there.'
     Say "     (If Ctrl+V pastes something else: the same message is in $CeHome\START_PROMPT.md.)"
     Say ''
-    Say '  The set-up put six buttons on your desktop (they start with "CE"): CE Claude Code,'
+    Say '  The set-up put seven buttons on your desktop (they start with "CE"): CE Claude Code, CE Email,'
     Say '  CE Terminal, CE Sync Now, CE Get Partner Changes, CE Member Check, and CE Privacy Choices,'
     Say '  which changes which of your folders the AI may look in. Your AI explains each one when'
     Say '  you ask it.'
