@@ -11,6 +11,14 @@ corpus and arrives only after the GitHub sign-in proves the person belongs to th
 curl -fsSL https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/mac.sh | bash
 ```
 
+**On a partner's Mac** (a Mac that also carries the company's shared files; from 1.0.14) — open Terminal (Command-Space, type Terminal, Return), paste, press Return:
+
+```
+curl -fsSL https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/mac_fleet.sh | bash
+```
+
+It installs Jump Desktop Connect and Tailscale (you sign in to both yourself), runs the ordinary Mac set-up above, then waits for M to let the computer in at the office. Use it only if M's email says so.
+
 **On Windows** — copy the line below (the copy button at its right edge). Then click **Start**,
 type **PowerShell**, click **Windows PowerShell** (the one without "x86"; the installer moves itself
 if the x86 one is used); when the blue window opens, press **Ctrl+V** (no need to click in it), then **Enter**. Click **Yes**
@@ -46,6 +54,7 @@ Version: see `VERSION`.
 | Version | Date | Change |
 |---|---|---|
 | 1.0.0 | 2026-10-12 | First version: Mac and Windows bootstraps for the member kit 1.0.0. |
+| 1.0.14 | 2026-11-21 | `mac_fleet.sh`: one line for a Mac that is both a core-fleet Mac and its person's own (first: Jason's new laptop; M, 2026-11-21: "I want to automate it as much as possible"). Part A: Homebrew, then the casks `jump-desktop-connect` and `tailscale-app` (names read with `brew info --cask` on Ms-MacBook-Pro, 2026-11-21), and Jump Desktop Connect opened for the person's own sign-in. Part B: `mac.sh`, unchanged. Part A also opens Tailscale for the person's own sign-in (Jason's old laptop is on the tailnet under his own login: `tailscale status` on the hub, 2026-11-21). Part C: the corpus's `member_fleet_join.sh` (member kit 1.0.45), which waits for M to let the Mac's key in at the hub. `helpers/JASON_NEW_LAPTOP.md` V2.1.0 to match. Not yet run on a real new Mac: the first run is with M watching, 2026-11-22. |
 | 1.0.13 | 2026-10-23 | `helpers/` added: guides that a person's own Claude reads on their phone during one particular set-up, from a link M sends; no passwords, keys or customer information. First: `helpers/JASON_NEW_LAPTOP.md` (Jason's new laptop, 2026-10-24), on M's yes ("Both": a shared Claude project and this public link, 2026-10-23 22:4x PDT). The two set-up lines are unchanged. |
 | 1.0.12 | 2026-10-20 | Windows: a user folder with a space in its name (%USERPROFILE% Last) no longer stops the set-up at step 5. In 1.0.11 step 4 handed Ubuntu the path of its script unquoted, so bash looked for /mnt/c/Users/<user> and installed nothing, and the step still printed OK: its check read a log file, and on an empty log Windows PowerShell's -notmatch gives an empty answer that counts as false. The path is now quoted, and step 4 succeeds only when the program's exit code is 0, the log says PREP_OK and Ubuntu itself shows the user ce and git, gh, tmux, ttyd and python3 (one `which` for all five; `command -v` with several names answers 0 when any one is found). First seen on a new member's PC, 2026-10-20. Tried on Windows (xps17, 2026-10-20, a folder with a space under %TEMP%): the 1.0.11 form fails there too (exit 127), the 1.0.12 form runs; the other ways the set-up and the kit hand paths to Ubuntu (Wsl-Ce, `& wsl.exe bash "path"`, python3, the desktop buttons, and both windows CE Claude Code opens) all work with the space; the whole script parses in Windows PowerShell 5.1. The DONE screens name seven buttons, CE Email among them (member kit 1.0.27). |
 | 1.0.11 | 2026-10-17 | Google Drive is installed with the other programs (Windows `winget` id Google.GoogleDrive, checked 2026-10-17 on xps17; Mac `brew install --cask google-drive`, checked 2026-10-17 on Js-MacBook-Pro, a package that asks for the Mac's password once more). A failed Drive install never stops the set-up. The DONE screen has four things left: Google Drive's sign-in is the third. It names six desktop buttons (CE Get Partner Changes, member kit 1.0.23). For member kit 1.0.24, which copies the files that are not text to the shared drive "Field Correspondents". Not yet run on a real computer. |
