@@ -43,7 +43,19 @@ quiet_long() {
   return $rc
 }
 
+# keep_sudo (1.0.15): the Mac forgets the password after about 5 minutes. A long download then made
+# the next installer ask again, and in 1.0.14 that question was hidden under the progress lines: Jason's
+# new laptop sat at "still working: installing jump-desktop-connect" for over an hour, 2026-11-24.
+# From the first password on, a quiet line every 50 seconds keeps it fresh until this window ends.
+KEEP_PID=""
+keep_sudo() {
+  [ -n "$KEEP_PID" ] && kill -0 "$KEEP_PID" 2>/dev/null && return 0
+  ( while kill -0 $$ 2>/dev/null; do sudo -n true 2>/dev/null; sleep 50; done ) &
+  KEEP_PID=$!
+}
+
 main() {
+trap '[ -n "$KEEP_PID" ] && kill "$KEEP_PID" 2>/dev/null' EXIT
 say "Capital Energy - setting up this Mac: your own workspace AND the company's (fleet set-up)"
 say "Three parts. Parts A and B you can do on your own (about 30 to 45 minutes, mostly waiting)."
 say "Part C waits for M once (it says when). Keep this window open. If it stops, paste the same line again."
@@ -57,6 +69,7 @@ if ! command -v brew >/dev/null 2>&1; then
   say "  Installing it (about 5 minutes; its own messages scroll past below)."
   say "  Type this Mac's password when asked (NOTHING SHOWS while you type - that is normal), then press Return."
   sudo -v < /dev/tty || stop "the password was not accepted."
+  keep_sudo
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" < /dev/null 2>&1 | tee -a "$LOG"
   for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do [ -x "$b" ] && eval "$("$b" shellenv)" && break; done
   command -v brew >/dev/null 2>&1 || stop "Homebrew did not install."
@@ -73,9 +86,14 @@ NEED=""
 if [ -n "$NEED" ]; then
   say "  These installers need this Mac's password (nothing shows while you type), then Return."
   sudo -v < /dev/tty || stop "the password was not accepted."
+  keep_sudo
   for c in $NEED; do
-    sudo -v < /dev/tty 2>/dev/null
-    quiet_long "installing $c" 4 brew install --cask "$c" && ok "$c installed" || note "$c did not install by itself - M installs it with you; the set-up carries on"
+    # 1.0.15: in full view, never hidden. If an installer asks for the password again, the question
+    # shows here and the keyboard reaches it.
+    say "  Installing $c (usually 1 to 4 minutes; its own messages show below)."
+    say "  IF YOU SEE \"Password:\" - type this Mac's password (nothing shows while you type), then Return."
+    if brew install --cask "$c" < /dev/tty 2>&1 | tee -a "$LOG"; [ "${PIPESTATUS[0]}" = 0 ]; then ok "$c installed"
+    else note "$c did not install by itself - M installs it with you; the set-up carries on"; fi
   done
 fi
 
@@ -108,6 +126,8 @@ else note "Tailscale is not installed yet - M installs it with you"; fi
 
 step "PART B - the Capital Energy set-up (your own workspace). It counts its own steps, 1 to 7."
 T="$(mktemp -d)"
+sudo -n true 2>/dev/null || { say "  This Mac's password once more (nothing shows while you type), then Return."; sudo -v < /dev/tty; }
+keep_sudo
 curl -fsSL "$RAW/mac.sh" -o "$T/mac.sh" || stop "could not download the set-up from GitHub (is the internet working?)."
 bash "$T/mac.sh"; B=$?
 [ "$B" = 0 ] || stop "the Capital Energy set-up stopped (its own lines above say why). Paste the same line again once that is fixed."
