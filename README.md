@@ -19,6 +19,14 @@ curl -fsSL https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/mac
 
 It installs Jump Desktop Connect and Tailscale (you sign in to both yourself), runs the ordinary Mac set-up above, then waits for M to let the computer in at the office. Use it only if M's email says so.
 
+**The office computer** (a Mac that belongs to the company and is run by M's AI; from 1.0.16) — in the company account on that Mac, open Terminal, paste, press Return:
+
+```
+curl -fsSL https://raw.githubusercontent.com/cptlenergy/fleet-bootstrap/main/mac_office.sh | bash
+```
+
+It installs Jump Desktop Connect and Tailscale (M signs in to both), sets the Mac to never sleep, installs Chrome, the Claude app, Google Drive, the tools and Claude Code with no sign-ins, then opens a terminal on the company network and stops: M's AI finishes from there. Only M starts this one.
+
 **On Windows** — copy the line below (the copy button at its right edge). Then click **Start**,
 type **PowerShell**, click **Windows PowerShell** (the one without "x86"; the installer moves itself
 if the x86 one is used); when the blue window opens, press **Ctrl+V** (no need to click in it), then **Enter**. Click **Yes**
@@ -54,6 +62,7 @@ Version: see `VERSION`.
 | Version | Date | Change |
 |---|---|---|
 | 1.0.0 | 2026-10-12 | First version: Mac and Windows bootstraps for the member kit 1.0.0. |
+| 1.0.16 | 2026-11-25 | `mac_office.sh` 0.2.0, new: the office computer (a company Mac run by M's AI and used by the team through one company account). Part A as `mac_fleet.sh` (Homebrew, Jump Desktop Connect, Tailscale - M's sign-ins, or a Tailscale auth key pasted when asked); POWER (the fleet desk mode: never sleeps, display off after 10 minutes); Part B the apps and tools with no sign-ins; Part C the Mac's key and a doorway terminal on the company network, then it stops - M's AI finishes from the doorway with the corpus's own `office_fleet_join.sh`. Never run on a Mac when published. No address of the company's network is in it. M's yes to publish: 2026-11-25 03:53 PST. |
 | 1.0.15 | 2026-11-24 | `mac_fleet.sh`: a hidden password question no longer stalls it. First real run (Jason's new laptop, 2026-11-24): the window printed "still working: installing jump-desktop-connect" for over an hour. The Mac had forgotten the password (it keeps it about 5 minutes), the installer asked again, and 1.0.14 ran the installer with its output in a log file, so the question was covered by the progress lines (Terminal's key icon was the only sign). Now the password is kept fresh from the first time it is typed until the window ends (through `mac.sh` too, whose Google Drive install has the same hidden form), and the two installers run in full view with the keyboard attached. M's yes to republish: 2026-11-24 08:42 PST. |
 | 1.0.14 | 2026-11-21 | `mac_fleet.sh`: one line for a Mac that is both a core-fleet Mac and its person's own (first: Jason's new laptop; M, 2026-11-21: "I want to automate it as much as possible"). Part A: Homebrew, then the casks `jump-desktop-connect` and `tailscale-app` (names read with `brew info --cask` on Ms-MacBook-Pro, 2026-11-21), and Jump Desktop Connect opened for the person's own sign-in. Part B: `mac.sh`, unchanged. Part A also opens Tailscale for the person's own sign-in (Jason's old laptop is on the tailnet under his own login: `tailscale status` on the hub, 2026-11-21). Part C: the corpus's `member_fleet_join.sh` (member kit 1.0.45), which waits for M to let the Mac's key in at the hub. `helpers/JASON_NEW_LAPTOP.md` V2.1.0 to match. Not yet run on a real new Mac: the first run is with M watching, 2026-11-22. |
 | 1.0.13 | 2026-10-23 | `helpers/` added: guides that a person's own Claude reads on their phone during one particular set-up, from a link M sends; no passwords, keys or customer information. First: `helpers/JASON_NEW_LAPTOP.md` (Jason's new laptop, 2026-10-24), on M's yes ("Both": a shared Claude project and this public link, 2026-10-23 22:4x PDT). The two set-up lines are unchanged. |
